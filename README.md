@@ -9,4 +9,4 @@ LINK TO YOUR PUBLISHED SITE
 
 ## Part 2:
 
-LINK TO YOUR PART 2 REPOSITORY
+https://github.com/x1zhu/github-actions-for-ci
