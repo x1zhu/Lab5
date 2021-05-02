@@ -5,7 +5,7 @@
 
 ## Part 1:
 
-LINK TO YOUR PUBLISHED SITE
+https://x1zhu.github.io/Lab5/
 
 ## Part 2:
 not sure which one you want, so i post both link here, 1st is repo, 2nd is congratulations page
