@@ -1,214 +1,65 @@
 // script.js
 
-
-
-const EL = (sel) => document.querySelector(sel);
-const ctx = EL("#user-image").getContext("2d");
-
-function readImage() {
-  if (!this.files || !this.files[0]) return;
-  
-  const FR = new FileReader();
-  FR.addEventListener("load", (evt) => {
-
 const img = new Image(); // used to load image from <input> and draw to canvas
 
-// Fires whenever the img object loads a new image (such as with img.src =)
-img.addEventListener('load', () => {	
-	
-  // TODO
-  //clear the canvas context
-ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+let generate_button = document.querySelector('button[type="submit"]');
+let reset_button = document.querySelector('button[type="reset"]');
+let read_button = document.querySelector('button[type="button"]');
+let volume = document.querySelector('input[type="range"]');
+let volumeImage = document.getElementById('volume-group').getElementsByTagName('img')[0];
+let voiceSelect = document.getElementById('voice-selection');
+let upper_text = document.getElementById('text-top');
+let lower_text = document.getElementById('text-bottom');
+let form = document.getElementById("generate-meme");
 
-//fill the canvas context with black
-ctx.fillStyle = 'black';
-ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+let canvas = document.getElementById('user-image');
+let canvasContent = canvas.getContext('2d');
+let currentLanguages;
 
-//toggle the relevant buttons
-
-document.getElementById("reset").disabled = false;
-document.getElementById("read").disabled = false;
-
-//draw the uploaded image 
-// use returned values 
-const obj = getDimmensions(ctx.canvas.width,ctx.canvas.height,img.width,img.height);
-
-ctx.drawImage(img,obj.startX, obj.startY, obj.width, obj.height);
-
-
-  // Some helpful tips:
-  // - Fill the whole Canvas with black first to add borders on non-square images, then draw on top
-  // - Clear the form when a new image is selected
-  // - If you draw the image to canvas here, it will update as soon as a new image is selected
-});
-img.src = evt.target.result;
-  });
-  FR.readAsDataURL(this.files[0]);
-}
-EL("#image-input").addEventListener("change", readImage);
-
-// On form: submit
-document.getElementById("submit").onclick = function () 
-{ 
-// read text from 
-	if (document.getElementById("text-top").value.length == 0&& document.getElementById("text-bottom").value.length == 0)
-	{
-		alert("Fill in the texts");
-		return;
-	}
-	else
-	{
-		// grab the text values
-		var text_top = document.getElementById("text-top").value;
-		var text_bottom = document.getElementById("text-bottom").value;
-		
-		// fill the text on canvas		
-
-		ctx.font = "12px Comic Sans MS";
-		ctx.fillStyle = "red";
-		
-		var centerPointWidth = 10;
-		var centerPointHeight = 10;
-		ctx.fillText(text_top,(ctx.canvas.width / 2) - (centerPointWidth / 2), (ctx.canvas.height / 2) - (centerPointHeight+40 / 2));
-		ctx.fillText(text_bottom,(ctx.canvas.width / 2) - (centerPointWidth / 2), (ctx.canvas.height / 2) - (centerPointHeight / 2));
-		
-		//toggle the relevant buttons
-
-		document.getElementById("reset").disabled = false;
-		document.getElementById("read").disabled = false;
-		document.getElementById("voice-selection").disabled = false;
-		
-	}
-
-
-return false
-};
-
-//button: clear
-document.getElementById("reset").onclick = function () 
-{ 
-
-	//clear the canvas context
-ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-// clear the text
-document.getElementById("text-top").value="";
-document.getElementById("text-bottom").value="";
-	
-//toggle the relevant buttons
-document.getElementById('image-input').value= null;
-document.getElementById("reset").disabled = true;
-document.getElementById("read").disabled = true;
-document.getElementById("voice-selection").disabled = true;
-
-
-return false
-};
-
-
-var synth = window.speechSynthesis;
-var inputForm = document.querySelector('form');
-var voiceSelect = document.querySelector('select');
-
-var text_top = document.getElementById("text-top");
-var text_bottom = document.getElementById("text-bottom");
-var vol = document.querySelector('#vol');
-
-
-// A function to populate the voice list
-var voices = [];
 
 function populateVoiceList() {
-  voices = synth.getVoices().sort(function (a, b) {
-      const aname = a.name.toUpperCase(), bname = b.name.toUpperCase();
-      if ( aname < bname ) return -1;
-      else if ( aname == bname ) return 0;
-      else return +1;
-  });
-  var selectedIndex = voiceSelect.selectedIndex < 0 ? 0 : voiceSelect.selectedIndex;
-  voiceSelect.innerHTML = '';
-  for(i = 0; i < voices.length ; i++) {
-    var option = document.createElement('option');
-    option.textContent = voices[i].name + ' (' + voices[i].lang + ')';
-    
-    if(voices[i].default) {
-      option.textContent += ' -- DEFAULT';
-    }
-
-    option.setAttribute('data-lang', voices[i].lang);
-    option.setAttribute('data-name', voices[i].name);
-    voiceSelect.appendChild(option);
+  if(typeof speechSynthesis === 'undefined') {
+    return;
   }
-  voiceSelect.selectedIndex = selectedIndex;
+  document.getElementById("voice-selection").disabled = false;
+  document.getElementById("voice-selection").innerHTML = '';
+  currentLanguages = speechSynthesis.getVoices();
+  for(var i = 0; i < currentLanguages.length; i++) {
+    var option = document.createElement('option');
+    option.textContent = currentLanguages[i].name + ' (' + currentLanguages[i].lang + ')';
+    option.setAttribute('value', i);
+    document.getElementById("voice-selection").appendChild(option);
+  }
 }
 
-populateVoiceList();
-if (speechSynthesis.onvoiceschanged !== undefined) {
+if (typeof speechSynthesis !== 'undefined' && speechSynthesis.onvoiceschanged !== undefined) {
   speechSynthesis.onvoiceschanged = populateVoiceList;
 }
 
-
-//button: read text
-document.getElementById("read").onclick = function () 
-{
-
-	speak(text_top.value);
-	speak(text_bottom.value);
-	
+read_button.addEventListener('click', ()=>{
+  let speak = new SpeechSynthesisUtterance(upper_text.value+" , "+lower_text.value);
+  speak.volume =  volume.value / 100;
+  speak.voice =  currentLanguages[voiceSelect.value];
+  speechSynthesis.speak(speak);
+});
 
 
-	return false
-}
-function speak(text_top)
-{
-	
- if (synth.speaking) {
-        console.error('speechSynthesis.speaking');
-        return;
-    }
-    if ( text_top !== '') {
-    var utterThis = new SpeechSynthesisUtterance(text_top);
-	
-    utterThis.onend = function (event) {
-        console.log('SpeechSynthesisUtterance.onend');
-    }
-    utterThis.onerror = function (event) {
-        console.error('SpeechSynthesisUtterance.onerror');
-    }
-    var selectedOption = voiceSelect.selectedOptions[0].getAttribute('data-name');
-    for(i = 0; i < voices.length ; i++) {
-      if(voices[i].name === selectedOption) {
-        utterThis.voice = voices[i];
-        break;
-      }
-    }
-	
-  // change the volume	
-vol.addEventListener("change", function(e) {
-	utterThis.volume = vol.value/100; 
-})
- // utterThis.volume = vol.value; 
-    synth.speak(utterThis);
-	
-	if (vol.value >= 67 && vol.value  <= 100) 
-		{
-			document.querySelector("img").src = "icons/volume-level-3.svg";
-		}
-	else if (vol.value >= 34 && vol.value  <= 66) 
-		{
-			document.querySelector("img").src = "icons/volume-level-2.svg";
-		}
-		
-		else if (vol.value >= 1 && vol.value  <= 33) 
-		{
-			document.querySelector("img").src = "icons/volume-level-1.svg";
-		}
-		else if(vol.value == 0 )
-		{
-			document.querySelector("img").src = "icons/volume-level-0.svg";
-		}
-  }
-}
+// Fires whenever the img object loads a new image (such as with img.src =)
+img.addEventListener('load', () => {
+  let imageDetails = getDimmensions(canvas.width, canvas.height,img.width,img.height);
 
+  canvasContent.clearRect(0, 0, canvas.width, canvas.height);
+  canvasContent.fillStyle="black";
+  canvasContent.fillRect(0,0,canvas.width,canvas.height);
+
+  reset_button.disabled =  true;
+  read_button.disabled =  true;
+  generate_button.disabled = false;
+
+  form.reset();
+
+  canvasContent.drawImage(img, imageDetails.startX, imageDetails.startY, imageDetails.width, imageDetails.height);
+});
 
 /**
  * Takes in the dimensions of the canvas and the new image, then calculates the new
@@ -221,7 +72,7 @@ vol.addEventListener("change", function(e) {
  * and also the starting X and starting Y coordinate to be used when you draw the new image to the
  * Canvas. These coordinates align with the top left of the image.
  */
-function getDimmensions(canvasWidth, canvasHeight, imageWidth, imageHeight) {	
+function getDimmensions(canvasWidth, canvasHeight, imageWidth, imageHeight) {
   let aspectRatio, height, width, startX, startY;
 
   // Get the aspect ratio, used so the picture always fits inside the canvas
@@ -249,3 +100,59 @@ function getDimmensions(canvasWidth, canvasHeight, imageWidth, imageHeight) {
 
   return { 'width': width, 'height': height, 'startX': startX, 'startY': startY }
 }
+
+
+
+document.getElementById('image-input').addEventListener("change", function() {
+    if (this.files && this.files[0]) {
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            img.src = e.target.result;
+        }
+        reader.readAsDataURL(this.files[0]);
+    }
+})
+
+
+reset_button.addEventListener('click',()=>{
+  form.reset();
+  canvasContent.clearRect(0, 0, canvas.width, canvas.height);
+  reset_button.disabled =  true;
+  read_button.disabled =  true;
+})
+
+form.addEventListener('submit',(e)=>{
+  e.preventDefault();
+  let ut = upper_text.value;
+  let lt = lower_text.value;
+
+  canvasContent.font = "25px Calibri";
+  canvasContent.fillStyle = "white";
+  canvasContent.textAlign = 'center';
+  canvasContent.fillText(ut, canvas.width/2, 40);
+
+  canvasContent.font = "25px Calibri";
+  canvasContent.fillStyle = "white";
+  canvasContent.textAlign = 'center';
+  canvasContent.fillText(lt, canvas.width/2, canvas.height - 40);
+
+  reset_button.disabled =  false;
+  read_button.disabled =  false;
+
+});
+
+
+volume.addEventListener("input", ()=>{
+  let volumeCurrently = volume.value;
+  
+  if(volumeCurrently == 0)
+    volumeImage.src="icons/volume-level-0.svg";
+  else if(volumeCurrently <= 33)
+    volumeImage.src="icons/volume-level-1.svg";
+  else if(volumeCurrently <= 66)
+    volumeImage.src="icons/volume-level-2.svg";
+  else
+    volumeImage.src="icons/volume-level-3.svg";
+  
+
+});
